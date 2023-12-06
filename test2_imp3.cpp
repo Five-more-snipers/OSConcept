@@ -62,36 +62,50 @@ int main() {
 
     sort(p,p+n,compare1);
 
-    queue<int> q;
+    priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> q;
     int current_time = 0;
-    q.push(0);
+    //q.push(0);
     int completed = 0;
     int mark[100];
     memset(mark,0,sizeof(mark));
     mark[0] = 1;
 
     while(completed != n) {
-        idx = q.front();
-        q.pop();
+        int min_remaining_time = INT_MAX;
+        int selected_process = -1;
 
-        //UPDATE #1: Making a dynamic Time Quantum based on remaining burst time
-        int mean = 0;
-        for (int j = 0; j < n; j++){
-            mean += burst_remaining[j];
+        for (int i = 0; i < n; i++) {
+            if (burst_remaining[i] > 0 && burst_remaining[i] < min_remaining_time && p[i].arrival_time <= current_time) {
+                min_remaining_time = burst_remaining[i];
+                selected_process = i;
+            }
         }
-        tq = max((mean / (n - completed) + 1) / 2, 1);
 
-        if(burst_remaining[idx] == p[idx].burst_time) {
-            p[idx].start_time = max(current_time,p[idx].arrival_time);
+        if (selected_process == -1) {
+            // No process available, move time forward
+            current_time++;
+            continue;
+        }
+
+        idx = selected_process;
+
+        if (burst_remaining[idx] == p[idx].burst_time) {
+            p[idx].start_time = max(current_time, p[idx].arrival_time);
             total_idle_time += p[idx].start_time - current_time;
             current_time = p[idx].start_time;
         }
 
-        if(burst_remaining[idx]-tq > 0) {
+        // IRR-SJF-DTQ logic for time quantum
+        int mean = 0;
+        for (int j = 0; j < n; j++) {
+            mean += burst_remaining[j];
+        }
+        tq = max((mean / (n - completed) + 1) / 2, 1);
+
+        if (burst_remaining[idx] - tq > 0) {
             burst_remaining[idx] -= tq;
             current_time += tq;
-        }
-        else {
+        } else {
             current_time += burst_remaining[idx];
             burst_remaining[idx] = 0;
             completed++;
@@ -106,28 +120,12 @@ int main() {
             total_response_time += p[idx].response_time;
         }
 
-        for(int i = 1; i < n; i++) {
-            //UPDATE 2: Bikin cepat tpi blum tahu apakah patuh aturan
-            if(burst_remaining[i] > 0 && mark[i] == 0) {
-                q.push(i);
-                mark[i] = 1;
+        // Check for newly arrived processes
+        for (int i = 0; i < n; i++) {
+            if (burst_remaining[i] > 0 && p[i].arrival_time <= current_time && i != idx) {
+                q.push({burst_remaining[i], i});
             }
         }
-        if(burst_remaining[idx] > 0) {
-            q.push(idx);
-        }
-
-        if(q.empty()) {
-            for(int i = 1; i < n; i++) {
-                if(burst_remaining[i] > 0) {
-                    q.push(i);
-                    mark[i] = 1;
-                    break;
-                }
-            }
-        }
-
-
     }
 
     avg_turnaround_time = (float) total_turnaround_time / n;
