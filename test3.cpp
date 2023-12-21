@@ -1,8 +1,8 @@
 #include <iostream>
 #include <algorithm>
 #include <climits>
-#include <iomanip>
 #include <vector>
+#include <iomanip>
 #include <queue>
 #include <string.h>
 using namespace std;
@@ -23,12 +23,22 @@ struct process
 
 bool compare1(process p1, process p2)
 {
-    return p1.arrival_time < p2.arrival_time || (p1.arrival_time == p2.arrival_time && p1.burst_time < p2.burst_time);
+    return p1.arrival_time < p2.arrival_time;
 }
 
 bool compare2(process p1, process p2)
 {
     return p1.pid < p2.pid;
+}
+
+void printGanttChart(const process p[], int n)
+{
+    cout << "Gantt Chart:" << endl;
+    for (int i = 0; i < n; i++)
+    {
+        cout << "| P" << p[i].pid << " ";
+    }
+    cout << "|" << endl;
 }
 
 int main()
@@ -52,8 +62,8 @@ int main()
     cout << setprecision(2) << fixed;
 
     n = 5;
-    int at[] = {0, 5, 10, 19, 28};
-    int bt[] = {32, 17, 24, 9, 19};
+    int at[] = {0, 6, 8, 9, 10};
+    int bt[] = {7, 15, 90, 42, 8};
 
     for (int i = 0; i < n; i++)
     {
@@ -110,6 +120,8 @@ int main()
         }
         tq = max((mean / (n - completed) + 1) / 2, 1);
 
+        cout << "Time " << current_time << " - Process P" << p[idx].pid << " - Time Quantum: " << tq << endl;
+
         if (burst_remaining[idx] - tq > 0)
         {
             burst_remaining[idx] -= tq;
@@ -129,6 +141,8 @@ int main()
             total_turnaround_time += p[idx].turnaround_time;
             total_waiting_time += p[idx].waiting_time;
             total_response_time += p[idx].response_time;
+
+            cout << "Process P" << p[idx].pid << " completed at time " << current_time << endl;
         }
 
         // Check for newly arrived processes
